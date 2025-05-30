@@ -5,6 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vihar</title> <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* Define the keyframes for the swaying animation */
+        @keyframes sway {
+            0% {
+                transform: translateY(0); /* Start at original position */
+            }
+            50% {
+                transform: translateY(-25px); /* Move up by 25 pixels */
+            }
+            100% {
+                transform: translateY(0); /* Return to original position */
+            }
+        }
+
+        /* Keyframes for blinking cursor */
+        @keyframes blink-caret {
+            from, to { border-color: transparent }
+            50% { border-color: #b0b0b0; }
+        }
+
         body {
             /* Set a dark grayish background color */
             background-color: #333;
@@ -33,6 +52,8 @@
             color: #f0f0f0;
             /* Adjust font size to take up most of the screen */
             font-size: 15vw; /* Use viewport width for responsive scaling */
+            /* Apply the swaying animation */
+            animation: sway 3s ease-in-out infinite alternate; /* 3s duration, smooth timing, infinite loop, alternates direction */
             /* Ensure smooth rendering of the text */
             text-rendering: optimizeLegibility;
             /* Add a subtle text shadow for depth */
@@ -47,10 +68,7 @@
             text-overflow: clip;
             /* Add some margin below to separate from the changing text */
             margin-bottom: 20px;
-            /* Add min-height to prevent layout shifts during deletion */
-            min-height: 18vw; /* Roughly enough for the largest font size */
-            display: inline-block; /* Required for min-height to work on h1 */
-            border-right: 2px solid transparent; /* Placeholder for cursor, will be toggled by JS */
+            /* Removed min-height here as the element is always visible and swaying */
         }
 
         .changing-role-text {
@@ -70,12 +88,6 @@
             display: inline-block; /* Ensure min-height applies correctly */
         }
 
-        /* Keyframes for blinking cursor */
-        @keyframes blink-caret {
-            from, to { border-color: transparent }
-            50% { border-color: #b0b0b0; }
-        }
-
         /* Import Google Font 'Roboto Mono' with italic style */
         @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@1,400&display=swap');
 
@@ -84,7 +96,6 @@
             .main-text {
                 font-size: 20vw; /* Make it even larger on smaller screens */
                 margin-bottom: 15px;
-                min-height: 23vw;
             }
             .changing-role-text {
                 font-size: 4vw;
@@ -97,7 +108,6 @@
             .main-text {
                 font-size: 25vw; /* Maximize on very small screens */
                 margin-bottom: 10px;
-                min-height: 28vw;
             }
             .changing-role-text {
                 font-size: 5vw;
@@ -108,14 +118,14 @@
     </style>
 </head>
 <body>
-    <h1 id="main-vihar-text" class="main-text"></h1>
+    <h1 id="main-vihar-text" class="main-text">vihar</h1>
     <span id="role-text" class="changing-role-text"></span>
 
     <script>
         // --- Configuration ---
         const mainTextElement = document.getElementById('main-vihar-text');
         const roleTextElement = document.getElementById('role-text');
-        const mainWord = "vihar";
+        const mainWordForTitle = "Vihar"; // Word for the title bar
         const roles = ["designer", "developer", "coder", "scripter", "fullstack dev"];
 
         // Typing/Deleting speeds and pauses
@@ -124,45 +134,38 @@
         const pauseAfterTyping = 1500; // Pause after typing a word
         const pauseAfterDeleting = 500; // Pause after deleting a word
 
-        // --- Main Vihar Text Typing Logic ---
-        let mainCharIndex = 0;
-        let isMainDeleting = false;
+        // --- Website Title Typing Logic ---
+        let titleCharIndex = 0;
+        let isTitleDeleting = false;
 
-        function typeMainVihar() {
-            // Toggle cursor visibility for main text
-            mainTextElement.style.borderRightColor = '#f0f0f0';
-
-            if (isMainDeleting) {
-                // Deleting "vihar"
-                mainTextElement.textContent = mainWord.substring(0, mainCharIndex - 1);
-                document.title = mainTextElement.textContent || "Vihar"; // Update title
-                mainCharIndex--;
+        function typeWebsiteTitle() {
+            if (isTitleDeleting) {
+                // Deleting title text
+                document.title = mainWordForTitle.substring(0, titleCharIndex - 1);
+                titleCharIndex--;
             } else {
-                // Typing "vihar"
-                mainTextElement.textContent = mainWord.substring(0, mainCharIndex + 1);
-                document.title = mainTextElement.textContent; // Update title
-                mainCharIndex++;
+                // Typing title text
+                document.title = mainWordForTitle.substring(0, titleCharIndex + 1);
+                titleCharIndex++;
             }
 
             let delay = typingSpeed;
 
-            if (isMainDeleting) {
+            if (isTitleDeleting) {
                 delay = deletingSpeed;
             }
 
-            if (!isMainDeleting && mainCharIndex === mainWord.length) {
-                // Done typing "vihar", pause then start deleting
+            if (!isTitleDeleting && titleCharIndex === mainWordForTitle.length) {
+                // Done typing title, pause then start deleting
                 delay = pauseAfterTyping;
-                isMainDeleting = true;
-                mainTextElement.style.borderRightColor = 'transparent'; // Hide cursor
-            } else if (isMainDeleting && mainCharIndex === 0) {
-                // Done deleting "vihar", pause then start typing again
-                isMainDeleting = false;
+                isTitleDeleting = true;
+            } else if (isTitleDeleting && titleCharIndex === 0) {
+                // Done deleting title, pause then start typing again
+                isTitleDeleting = false;
                 delay = pauseAfterDeleting;
-                mainTextElement.style.borderRightColor = 'transparent'; // Hide cursor
             }
 
-            setTimeout(typeMainVihar, delay);
+            setTimeout(typeWebsiteTitle, delay);
         }
 
         // --- Changing Role Text Typing Logic ---
@@ -205,10 +208,12 @@
 
         // --- Start Animations on Page Load ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Start the main "vihar" typing animation
-            typeMainVihar();
+            // Set initial main text to 'vihar' (it will sway)
+            mainTextElement.textContent = "vihar";
+            // Start the website title typing animation
+            typeWebsiteTitle();
             // Start the role text typing animation after a short delay
-            setTimeout(typeRoleText, 1000); // Start roles slightly after vihar starts
+            setTimeout(typeRoleText, 1000);
         });
     </script>
 </body>
