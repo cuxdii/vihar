@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vihar</title> <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            /* Set a dark grayish background color */
+            background-color: #333;
+            /* Use flexbox to center the content both horizontally and vertically */
+            display: flex;
+            flex-direction: column; /* Arrange items in a column */
+            justify-content: center;
+            align-items: center;
+            /* Ensure the body takes at least the full height of the viewport */
+            min-height: 100vh;
+            /* Set font to Inter as per guidelines */
+            font-family: 'Inter', sans-serif;
+            /* Prevent horizontal scrolling */
+            overflow-x: hidden;
+            /* Ensure the body is not too padded, allowing text to fill more */
+            margin: 0;
+            padding: 0;
+        }
+
+        .main-text {
+            /* Use the 'Roboto Mono' font for the text, with italic style */
+            font-family: 'Roboto Mono', monospace; /* The requested font */
+            font-style: italic; /* Set font style to italic */
+            font-weight: 400; /* Set font weight to regular (400) */
+            /* Set a light color for the text */
+            color: #f0f0f0;
+            /* Adjust font size to take up most of the screen */
+            font-size: 15vw; /* Use viewport width for responsive scaling */
+            /* Ensure smooth rendering of the text */
+            text-rendering: optimizeLegibility;
+            /* Add a subtle text shadow for depth */
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.6); /* Slightly larger shadow */
+            /* Ensure the element has its own stacking context for transform */
+            position: relative;
+            /* Adjust letter spacing as 'Roboto Mono' is not cursive */
+            letter-spacing: 0;
+            /* Prevent text from going outside the screen on very small viewports */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: clip;
+            /* Add some margin below to separate from the changing text */
+            margin-bottom: 20px;
+            /* Add min-height to prevent layout shifts during deletion */
+            min-height: 18vw; /* Roughly enough for the largest font size */
+            display: inline-block; /* Required for min-height to work on h1 */
+            border-right: 2px solid transparent; /* Placeholder for cursor, will be toggled by JS */
+        }
+
+        .changing-role-text {
+            font-family: 'Roboto Mono', monospace; /* Match the main font */
+            font-style: normal; /* No italic for this text */
+            font-weight: 400;
+            color: #b0b0b0; /* Slightly dimmer color */
+            font-size: 3vw; /* Smaller, responsive font size */
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
+            min-width: 200px; /* Ensure enough width to prevent layout shifts */
+            text-align: center;
+            /* Add a blinking cursor effect */
+            border-right: 2px solid #b0b0b0; /* Blinking cursor */
+            animation: blink-caret .75s step-end infinite;
+            /* Set a minimum height to prevent layout shifts when text is empty */
+            min-height: 4vw; /* Ensure enough height for the largest text at its font size */
+            display: inline-block; /* Ensure min-height applies correctly */
+        }
+
+        /* Keyframes for blinking cursor */
+        @keyframes blink-caret {
+            from, to { border-color: transparent }
+            50% { border-color: #b0b0b0; }
+        }
+
+        /* Import Google Font 'Roboto Mono' with italic style */
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@1,400&display=swap');
+
+        /* Responsive adjustments for smaller screens (vw handles most of it, but can fine-tune) */
+        @media (max-width: 768px) {
+            .main-text {
+                font-size: 20vw; /* Make it even larger on smaller screens */
+                margin-bottom: 15px;
+                min-height: 23vw;
+            }
+            .changing-role-text {
+                font-size: 4vw;
+                min-width: 150px;
+                min-height: 5vw; /* Adjust min-height for smaller screens */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-text {
+                font-size: 25vw; /* Maximize on very small screens */
+                margin-bottom: 10px;
+                min-height: 28vw;
+            }
+            .changing-role-text {
+                font-size: 5vw;
+                min-width: 100px;
+                min-height: 6vw; /* Adjust min-height for smallest screens */
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1 id="main-vihar-text" class="main-text"></h1>
+    <span id="role-text" class="changing-role-text"></span>
+
+    <script>
+        // --- Configuration ---
+        const mainTextElement = document.getElementById('main-vihar-text');
+        const roleTextElement = document.getElementById('role-text');
+        const mainWord = "vihar";
+        const roles = ["designer", "developer", "coder", "scripter", "fullstack dev"];
+
+        // Typing/Deleting speeds and pauses
+        const typingSpeed = 100; // Milliseconds per character
+        const deletingSpeed = 50; // Milliseconds per character
+        const pauseAfterTyping = 1500; // Pause after typing a word
+        const pauseAfterDeleting = 500; // Pause after deleting a word
+
+        // --- Main Vihar Text Typing Logic ---
+        let mainCharIndex = 0;
+        let isMainDeleting = false;
+
+        function typeMainVihar() {
+            // Toggle cursor visibility for main text
+            mainTextElement.style.borderRightColor = '#f0f0f0';
+
+            if (isMainDeleting) {
+                // Deleting "vihar"
+                mainTextElement.textContent = mainWord.substring(0, mainCharIndex - 1);
+                document.title = mainTextElement.textContent || "Vihar"; // Update title
+                mainCharIndex--;
+            } else {
+                // Typing "vihar"
+                mainTextElement.textContent = mainWord.substring(0, mainCharIndex + 1);
+                document.title = mainTextElement.textContent; // Update title
+                mainCharIndex++;
+            }
+
+            let delay = typingSpeed;
+
+            if (isMainDeleting) {
+                delay = deletingSpeed;
+            }
+
+            if (!isMainDeleting && mainCharIndex === mainWord.length) {
+                // Done typing "vihar", pause then start deleting
+                delay = pauseAfterTyping;
+                isMainDeleting = true;
+                mainTextElement.style.borderRightColor = 'transparent'; // Hide cursor
+            } else if (isMainDeleting && mainCharIndex === 0) {
+                // Done deleting "vihar", pause then start typing again
+                isMainDeleting = false;
+                delay = pauseAfterDeleting;
+                mainTextElement.style.borderRightColor = 'transparent'; // Hide cursor
+            }
+
+            setTimeout(typeMainVihar, delay);
+        }
+
+        // --- Changing Role Text Typing Logic ---
+        let currentRoleIndex = 0;
+        let roleCharIndex = 0;
+        let isRoleDeleting = false;
+
+        function typeRoleText() {
+            const currentRole = roles[currentRoleIndex];
+
+            if (isRoleDeleting) {
+                // Deleting current role
+                roleTextElement.textContent = currentRole.substring(0, roleCharIndex - 1);
+                roleCharIndex--;
+            } else {
+                // Typing current role
+                roleTextElement.textContent = currentRole.substring(0, roleCharIndex + 1);
+                roleCharIndex++;
+            }
+
+            let delay = typingSpeed;
+
+            if (isRoleDeleting) {
+                delay = deletingSpeed;
+            }
+
+            if (!isRoleDeleting && roleCharIndex === currentRole.length) {
+                // Done typing role, pause then start deleting
+                delay = pauseAfterTyping;
+                isRoleDeleting = true;
+            } else if (isRoleDeleting && roleCharIndex === 0) {
+                // Done deleting role, move to next role and pause before typing
+                isRoleDeleting = false;
+                currentRoleIndex = (currentRoleIndex + 1) % roles.length;
+                delay = pauseAfterDeleting;
+            }
+
+            setTimeout(typeRoleText, delay);
+        }
+
+        // --- Start Animations on Page Load ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Start the main "vihar" typing animation
+            typeMainVihar();
+            // Start the role text typing animation after a short delay
+            setTimeout(typeRoleText, 1000); // Start roles slightly after vihar starts
+        });
+    </script>
+</body>
+</html>
