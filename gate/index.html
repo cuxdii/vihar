@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GATE Results Countdown</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.min.js"></script>
+    <style>
+        :root {
+            --bg-light: #ffffff;
+            --text-light: #1f2937;
+            --bg-dark: #111827;
+            --text-dark: #f9fafb;
+            /* Font sizes using clamp for fluid responsiveness */
+            --font-size-h1: clamp(2.5rem, 8vw, 4rem);
+            --font-size-timer: clamp(2.5rem, 9vw, 4.5rem);
+            --font-size-body: clamp(0.875rem, 2.5vw, 1rem);
+        }
+        html.dark {
+            --bg-light: #111827;
+            --text-light: #f9fafb;
+        }
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background-color: var(--bg-light);
+            color: var(--text-light);
+            transition: background-color 0.5s ease, color 0.5s ease;
+            overflow: hidden;
+            font-size: var(--font-size-body);
+        }
+        #interactive-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+        }
+        h1 { font-style: italic; font-weight: 800; font-size: var(--font-size-h1); }
+        .timer-box span:first-child { font-style: italic; font-weight: 700; font-size: var(--font-size-timer); }
+        .timer-box { transition: all 0.5s ease; flex: 1; aspect-ratio: 1/1; max-width: 160px; }
+        html:not(.dark) .timer-box { background-color: rgba(243, 244, 246, 0.7); border: 1px solid #e5e7eb; }
+        html.dark .timer-box { background-color: rgba(31, 41, 55, 0.5); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .minimal-mode .info-footer, .minimal-mode .controls-except-minimal, .minimal-mode #message-box, .minimal-mode #page-footer { opacity: 0; transform: translateY(20px); pointer-events: none; }
+        #confetti-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }
+        .confetti { position: absolute; width: 10px; height: 10px; opacity: 0; animation: fall 5s linear forwards; }
+        @keyframes fall {
+            0% { transform: translateY(-10vh) rotateZ(0deg); opacity: 1; }
+            100% { transform: translateY(110vh) rotateZ(720deg); opacity: 0; }
+        }
+        #message-box { transition: opacity 0.7s ease-in-out; }
+        #message-box.fade-out { opacity: 0; }
+        #message-text { font-style: italic; }
+        .tap-target { position: fixed; z-index: 100; }
+        #top-tap { top: 0; left: 0; right: 0; height: 25%; }
+        #bottom-tap { bottom: 0; left: 0; right: 0; height: 25%; }
+        #left-tap { top: 0; bottom: 0; left: 0; width: 25%; }
+        #right-tap { top: 0; bottom: 0; right: 0; width: 25%; }
+        #settings-modal, #shortcuts-modal { transition: opacity 0.3s ease, visibility 0.3s ease; }
+        #settings-panel, #shortcuts-panel { transition: transform 0.3s ease; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+    <canvas id="interactive-bg"></canvas>
+    <div id="top-tap" class="tap-target"></div><div id="bottom-tap" class="tap-target"></div><div id="left-tap" class="tap-target"></div><div id="right-tap" class="tap-target"></div>
+    <div id="confetti-container"></div>
+
+    <div id="app-container" class="w-full max-w-5xl h-full flex flex-col justify-center text-center p-4 sm:p-6 lg:p-8">
+        <header class="mb-8 transition-all duration-500">
+            <h1 class="tracking-tight text-gray-800 dark:text-white">GATE Results</h1>
+            <p id="release-info" class="text-sm text-gray-500 dark:text-gray-400 mt-2 transition-opacity duration-500">Results are released between 12:00 PM and 6:00 PM AWST.</p>
+        </header>
+
+        <main id="countdown-container" class="flex justify-center items-center gap-2 sm:gap-4 w-full max-w-3xl mx-auto mb-8">
+            <!-- Timer boxes injected here -->
+        </main>
+        
+        <div id="message-box" class="h-10 mb-8 flex items-center justify-center">
+            <p id="message-text" class="text-gray-500 dark:text-gray-400 text-sm"></p>
+        </div>
+
+        <div class="controls flex justify-center items-center space-x-2 sm:space-x-3 mb-12">
+             <button id="help-btn" class="controls-except-minimal p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-300"><i data-lucide="help-circle"></i></button>
+             <button id="settings-toggle" class="controls-except-minimal p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-300"><i data-lucide="settings"></i></button>
+             <button id="dark-mode-toggle" class="controls-except-minimal p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-300"><i data-lucide="moon" class="block dark:hidden"></i><i data-lucide="sun" class="hidden dark:block"></i></button>
+             <button id="fullscreen-toggle" class="controls-except-minimal p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-300"><i data-lucide="expand" id="expand-icon"></i><i data-lucide="shrink" id="shrink-icon" class="hidden"></i></button>
+             <button id="minimal-mode-toggle" class="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-300"><i data-lucide="eye-off" id="minimal-icon-off"></i><i data-lucide="eye" id="minimal-icon-on" class="hidden"></i></button>
+        </div>
+
+        <footer id="info-footer" class="info-footer max-w-2xl mx-auto">
+            <div id="info-section" class="text-left p-6 bg-gray-100/50 dark:bg-gray-800/50 rounded-lg">
+                <h2 class="font-bold text-lg text-gray-800 dark:text-white mb-2" style="font-style: normal; font-weight: 700;">What is GATE?</h2>
+                <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">The Gifted and Talented Education (GATE) program, also known as ASET, provides academically gifted students with a challenging and enriching learning environment. <br><br><strong>Disclaimer:</strong> This countdown is based on the official release window. Results may sometimes arrive slightly earlier or later. This website is a predictive tool, not an official source.</p>
+                <a href="https://www.education.wa.edu.au/gifted-and-talented" target="_blank" rel="noopener noreferrer" class="inline-flex items-center text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline">Learn more <i data-lucide="arrow-right" class="w-4 h-4 ml-1"></i></a>
+            </div>
+            <div id="whats-next-section" class="hidden text-left p-6 bg-gray-100/50 dark:bg-gray-800/50 rounded-lg">
+                <!-- Content injected by JS -->
+            </div>
+        </footer>
+        <div id="page-footer" class="text-center mt-8 text-xs text-gray-400 dark:text-gray-500">Made with ❤️ by Vihar.</div>
+    </div>
+
+    <!-- Modals -->
+    <div id="settings-modal" class="invisible opacity-0 fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+        <div id="settings-panel" class="w-full max-w-sm bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 space-y-6 transform scale-95">
+             <div class="flex justify-between items-center"><h2 class="text-xl font-bold text-gray-800 dark:text-white">Settings</h2><button id="close-settings-btn" class="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"><i data-lucide="x"></i></button></div>
+             <div class="flex items-center justify-between"><label class="font-medium text-gray-700 dark:text-gray-300">Animated Background</label><button id="bg-toggle" class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors bg-gray-200 dark:bg-gray-700"><span class="inline-block w-4 h-4 transform bg-white rounded-full transition-transform translate-x-1"></span></button></div>
+             <div class="flex items-center justify-between"><label class="font-medium text-gray-700 dark:text-gray-300">Ambient Music</label><button id="music-toggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"><i data-lucide="music-2" id="music-on-icon"></i><i data-lucide="volume-x" id="music-off-icon" class="hidden"></i></button></div>
+             <div>
+                <h3 class="font-medium text-gray-700 dark:text-gray-300 mb-2">Time Capsule</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Write a message for your future self. It will be shown to you after the countdown ends.</p>
+                <textarea id="time-capsule-input" class="w-full p-2 border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 rounded-md h-24 text-sm" placeholder="Dear future me..."></textarea>
+                <button id="save-capsule-btn" class="mt-2 w-full bg-blue-600 text-white font-semibold py-2 rounded-md hover:bg-blue-700 transition-colors">Save Message</button>
+                <p class="text-xs text-gray-400 dark:text-gray-500 mt-2"><em>Note: Your message is saved only on this device. Clearing browser data will erase it.</em></p>
+             </div>
+        </div>
+    </div>
+    
+    <div id="shortcuts-modal" class="invisible opacity-0 fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+        <div id="shortcuts-panel" class="w-full max-w-sm bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 space-y-4 transform scale-95">
+             <div class="flex justify-between items-center"><h2 class="text-xl font-bold text-gray-800 dark:text-white">Keyboard Shortcuts</h2><button id="close-shortcuts-btn" class="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"><i data-lucide="x"></i></button></div>
+             <ul class="space-y-2 text-gray-700 dark:text-gray-300">
+                <li class="flex items-center justify-between"><span>Toggle Minimal Mode</span><kbd class="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg dark:bg-gray-600 dark:text-gray-100 dark:border-gray-500">M</kbd></li>
+                <li class="flex items-center justify-between"><span>Toggle Theme</span><kbd class="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg dark:bg-gray-600 dark:text-gray-100 dark:border-gray-500">T</kbd></li>
+                <li class="flex items-center justify-between"><span>Toggle Fullscreen</span><kbd class="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg dark:bg-gray-600 dark:text-gray-100 dark:border-gray-500">F</kbd></li>
+                <li class="flex items-center justify-between"><span>Open/Close Settings</span><kbd class="px-2 py-1.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg dark:bg-gray-600 dark:text-gray-100 dark:border-gray-500">S</kbd></li>
+             </ul>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- GLOBAL STATE ---
+        let countdownDate = new Date('2025-06-12T12:00:00+08:00').getTime();
+        const countdownEnd = new Date('2025-06-12T18:00:00+08:00').getTime();
+        let easterEggTriggered = false, timelineInterval, mainCountdownInterval, particlesAnimationId;
+        let timelineProgress = 0, isTimelineScrubbing = false;
+        let musicPlaying = false, bgAnimated = false;
+
+        // --- ELEMENTS ---
+        const docEl = document.documentElement;
+        const countdownContainer = document.getElementById('countdown-container');
+        const releaseInfo = document.getElementById('release-info');
+        const appContainer = document.getElementById('app-container');
+        const infoFooter = document.getElementById('info-footer');
+        const infoSection = document.getElementById('info-section');
+        const whatsNextSection = document.getElementById('whats-next-section');
+
+        // --- INITIAL SETUP ---
+        countdownContainer.innerHTML = ['Days', 'Hours', 'Minutes', 'Seconds'].map(unit => `<div class="timer-box flex flex-col items-center justify-center rounded-2xl p-2"><span id="${unit.toLowerCase()}" class="tracking-tighter text-gray-900 dark:text-white">00</span><span class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mt-1">${unit}</span></div>`).join('');
+        lucide.createIcons();
+
+        // --- COUNTDOWN LOGIC ---
+        const updateCountdown = () => {
+            const now = new Date().getTime();
+            const distance = countdownDate - now;
+
+            if (distance < 0) {
+                clearInterval(mainCountdownInterval);
+                mainCountdownInterval = null;
+                if (easterEggTriggered) { showTimelineUI(); return; }
+                
+                infoSection.classList.add('hidden');
+                whatsNextSection.classList.remove('hidden');
+                
+                const capsuleMessage = localStorage.getItem('gateTimeCapsule');
+                whatsNextSection.innerHTML = `
+                    <h2 class="font-bold text-lg text-gray-800 dark:text-white mb-2" style="font-style: normal; font-weight: 700;">What's Next?</h2>
+                    ${capsuleMessage ? `<div class="mb-4 p-4 border-l-4 border-blue-500 bg-blue-500/10"><h3 class="font-semibold text-blue-800 dark:text-blue-300">A Message From Your Past Self</h3><p class="mt-2 text-sm italic">"${capsuleMessage}"</p></div>` : ''}
+                    <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">The results window has passed. No matter the outcome, be proud of your effort.</p>
+                    <ul class="list-disc list-inside space-y-2"><li class="ml-2"><a href="https://www.education.wa.edu.au/gifted-and-talented/key-dates" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline">Official Key Dates & Next Steps</a></li><li class="ml-2"><a href="https://headspace.org.au/explore-topics/for-young-people/work-and-study/" target="_blank" class="text-blue-600 dark:text-blue-400 hover:underline">Managing Exam Stress - Headspace</a></li></ul>`;
+                
+                if (now < countdownEnd) {
+                    countdownContainer.innerHTML = `<div class="text-2xl sm:text-3xl font-bold text-green-500">Results are being released now!</div>`;
+                    releaseInfo.textContent = "Check your emails and the official portal. Good luck!";
+                } else {
+                    countdownContainer.innerHTML = `<div class="text-2xl sm:text-3xl font-bold text-blue-500">The results are out!</div>`;
+                    releaseInfo.textContent = "The release window has ended. We hope you got the results you wanted!";
+                }
+                return;
+            }
+            if (document.getElementById('days')) {
+                document.getElementById('days').textContent = String(Math.floor(distance / 864e5)).padStart(2, '0');
+                document.getElementById('hours').textContent = String(Math.floor((distance % 864e5) / 36e5)).padStart(2, '0');
+                document.getElementById('minutes').textContent = String(Math.floor((distance % 36e5) / 6e4)).padStart(2, '0');
+                document.getElementById('seconds').textContent = String(Math.floor((distance % 6e4) / 1000)).padStart(2, '0');
+            }
+        };
+        mainCountdownInterval = setInterval(updateCountdown, 1000);
+        updateCountdown();
+
+        // --- MESSAGE BOX ---
+        const messages =["Pressure, huh?", "This could very well decide your life... <em>(maybe)</em>.", "Patience is a virtue, especially now.", "Whatever happens, you've already done the hard part.", "Remember to breathe. You got this.", "\"The future belongs to those who believe in the beauty of their dreams.\" - Eleanor Roosevelt", "The die is cast.", "No matter the result, this doesn't define your entire worth.", "Just think, in a few days, this will all be over.", "<em>Deep breaths</em>. You've made it this far.", "Maybe it's time for a cup of tea?", "Pro-tip: Refreshing the page won't make it go faster.", "This is just one step on a very long journey.", "Anticipation is a strange feeling, isn't it?", "Hang in there.", "The waiting is the hardest part.", "Soon.", "Almost there...", "The universe is unfolding as it should.", "Trust the process.", "All your hard work has led to this moment.", "Be proud of how far you've come.", "One day, you'll look back on this moment and smile.", "What's for you will not pass you by.", "Keep calm and carry on.", "Remember that you are more than just one test result.", "Let's hope for the best.", "This is where the story gets interesting.", "You are capable of amazing things.", "Believe in yourself.", "Every ending is a new beginning.", "The suspense is killing me too!", "Have you tried thinking about something else for a bit?", "This too shall pass.", "Today's anxieties are tomorrow's memories.", "You've prepared for this. You're ready.", "Sending good vibes your way.", "The calm before the... results.", "Don't forget to stay hydrated.", "This is a marathon, not a sprint.", "A watched pot never boils... or something like that.", "Success is not final, failure is not fatal: it is the courage to continue that counts.", "The world is bigger than this single outcome.", "What will be, will be.", "Channeling all the positive energy for you.", "You are resilient.", "This moment of waiting is temporary.", "Focus on what you can control: your reaction."];
+        let messageIndex = 0;
+        const messageBox = document.getElementById('message-box'), messageText = document.getElementById('message-text');
+        const changeMessage = () => { messageBox.classList.add('fade-out'); setTimeout(() => { messageIndex = (messageIndex + 1) % messages.length; messageText.innerHTML = messages[messageIndex]; messageBox.classList.remove('fade-out'); }, 700); };
+        messageText.innerHTML = messages[Math.floor(Math.random() * messages.length)];
+        setInterval(changeMessage, 6000);
+
+        // --- EASTER EGG ---
+        const keySequences = {
+            konami: ['arrowup', 'arrowup', 'arrowdown', 'arrowdown', 'arrowleft', 'arrowright', 'arrowleft', 'arrowright', 'b', 'a'],
+            touch: ['top', 'top', 'bottom', 'bottom', 'left', 'right', 'left', 'right'],
+            asdf: ['a','s','d','f','g','h','j','k','l',';','\'','enter'],
+            devmode: ['d','e','v','m','o','d','e']
+        };
+        const wasdMap = { 'w': 'arrowup', 's': 'arrowdown', 'a': 'arrowleft', 'd': 'arrowright' };
+        let sequenceTrackers = { konami: 0, touch: 0, asdf: 0, devmode: 0 };
+        const processInput = (key) => {
+            const lKey = key.toLowerCase(); const konamiKey = wasdMap[lKey] || lKey;
+            for (const seqName in keySequences) {
+                const currentSeq = keySequences[seqName]; let currentKey = (seqName === 'konami') ? konamiKey : (seqName === 'touch' ? key : lKey);
+                sequenceTrackers[seqName] = (currentKey === currentSeq[sequenceTrackers[seqName]]) ? sequenceTrackers[seqName] + 1 : (currentKey === currentSeq[0] ? 1 : 0);
+                if (sequenceTrackers[seqName] === currentSeq.length) { triggerEasterEgg(); for(const s in sequenceTrackers) sequenceTrackers[s] = 0; break; }
+            }
+        };
+        document.addEventListener('keydown', (e) => processInput(e.key));
+        ['top', 'bottom', 'left', 'right'].forEach(id => document.getElementById(`${id}-tap`).addEventListener('click', () => processInput(id)));
+        
+        function triggerEasterEgg() {
+            if (easterEggTriggered) return; easterEggTriggered = true;
+            if (Tone.context.state !== 'running') Tone.start();
+            const synth = new Tone.Synth().toDestination(), now = Tone.now();
+            synth.triggerAttackRelease("C5", "8n", now); synth.triggerAttackRelease("E5", "8n", now + 0.1); synth.triggerAttackRelease("G5", "8n", now + 0.2); synth.triggerAttackRelease("C6", "8n", now + 0.3);
+            createConfetti(); countdownDate = new Date().getTime() + 3200;
+        }
+
+        function createConfetti() {
+            const container = document.getElementById('confetti-container'), colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#cddc39', '#ffeb3b', '#ffc107', '#ff9800'];
+            for (let i = 0; i < 150; i++) {
+                const c = document.createElement('div'); c.classList.add('confetti');
+                c.style.left = `${Math.random()*100}vw`; c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                c.style.animationDelay = `${Math.random()*2}s`; c.style.transform = `scale(${Math.random()*0.5+0.5})`;
+                container.appendChild(c); setTimeout(() => c.remove(), 5000);
+            }
+        }
+        
+        function showTimelineUI() {
+            releaseInfo.textContent = "EASTER EGG: Release Window Simulation";
+            countdownContainer.innerHTML = `<div id="timeframe-display" class="w-full max-w-2xl mx-auto p-4 opacity-0 -translate-y-4 transition-all duration-700 cursor-pointer"><div class="relative w-full"><div class="h-3 bg-gray-200 dark:bg-gray-700 rounded-full shadow-inner"></div><div class="absolute top-0 left-0 w-full h-full flex items-center justify-between px-[1.5px]">${[...Array(7)].map(()=>`<div class="w-px h-5 bg-gray-300 dark:bg-gray-600"></div>`).join('')}</div><div id="current-time-indicator" class="absolute top-1/2 h-full flex flex-col items-center" style="left:0%;"><div id="current-time-text" class="absolute bottom-full mb-3 whitespace-nowrap text-xs bg-gray-900 text-white dark:bg-white dark:text-black px-2 py-1 rounded-md shadow-lg"></div><div class="w-1 h-5 bg-blue-500 rounded-full transform -translate-y-1/2 absolute top-1/2 shadow-lg border-2 border-gray-200 dark:border-gray-900"></div></div></div><div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-3 font-semibold"><span>12PM</span><span>1PM</span><span>2PM</span><span>3PM</span><span>4PM</span><span>5PM</span><span>6PM</span></div></div>`;
+            setTimeout(() => document.getElementById('timeframe-display')?.classList.remove('opacity-0','-translate-y-4'), 100);
+            
+            const timeframeDisplay = document.getElementById('timeframe-display');
+            const scrub = (e) => { const rect = timeframeDisplay.getBoundingClientRect(); const x = (e.clientX || e.touches[0].clientX) - rect.left; timelineProgress = Math.max(0, Math.min(1, x / rect.width)); updateTimeline(); };
+            timeframeDisplay.addEventListener('mousedown', (e) => { isTimelineScrubbing = true; scrub(e); }); timeframeDisplay.addEventListener('touchstart', (e) => { isTimelineScrubbing = true; scrub(e); });
+            document.addEventListener('mousemove', (e) => { if(isTimelineScrubbing) scrub(e); }); document.addEventListener('touchmove', (e) => { if(isTimelineScrubbing) scrub(e); });
+            document.addEventListener('mouseup', () => isTimelineScrubbing = false); document.addEventListener('touchend', () => isTimelineScrubbing = false);
+            if (timelineInterval) clearInterval(timelineInterval);
+            timelineInterval = setInterval(() => { if (!isTimelineScrubbing) { timelineProgress = (Date.now() % 60000) / 60000; updateTimeline(); } }, 50);
+            updateTimeline();
+        }
+
+        function updateTimeline() {
+            const indicator = document.getElementById('current-time-indicator'), timeText = document.getElementById('current-time-text');
+            if (!indicator || !timeText) return; const startTime = new Date('2025-06-12T12:00:00+08:00').getTime();
+            indicator.style.left = `${timelineProgress * 100}%`;
+            const simulatedTime = new Date(startTime + (timelineProgress * 216e5));
+            timeText.textContent = simulatedTime.toLocaleTimeString('en-US', {timeZone:'Australia/Perth', hour:'numeric', minute:'2-digit', second:'2-digit', hour12:true});
+        }
+
+        // --- MODALS AND CONTROLS ---
+        const settingsModal = document.getElementById('settings-modal'), settingsPanel = document.getElementById('settings-panel');
+        const shortcutsModal = document.getElementById('shortcuts-modal'), shortcutsPanel = document.getElementById('shortcuts-panel');
+        const openModal = (modal, panel) => { modal.classList.remove('invisible', 'opacity-0'); panel.classList.remove('scale-95'); };
+        const closeModal = (modal, panel) => { panel.classList.add('scale-95'); modal.classList.add('invisible', 'opacity-0'); };
+        
+        document.getElementById('settings-toggle').addEventListener('click', () => openModal(settingsModal, settingsPanel));
+        document.getElementById('close-settings-btn').addEventListener('click', () => closeModal(settingsModal, settingsPanel));
+        settingsModal.addEventListener('click', (e) => { if(e.target === settingsModal) closeModal(settingsModal, settingsPanel); });
+        
+        document.getElementById('help-btn').addEventListener('click', () => openModal(shortcutsModal, shortcutsPanel));
+        document.getElementById('close-shortcuts-btn').addEventListener('click', () => closeModal(shortcutsModal, shortcutsPanel));
+        shortcutsModal.addEventListener('click', (e) => { if(e.target === shortcutsModal) closeModal(shortcutsModal, shortcutsPanel); });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if(e.target.tagName === 'TEXTAREA') return;
+            switch(e.key.toLowerCase()){
+                case 'm': document.getElementById('minimal-mode-toggle').click(); break;
+                case 't': document.getElementById('dark-mode-toggle').click(); break;
+                case 'f': document.getElementById('fullscreen-toggle').click(); break;
+                case 's': settingsModal.classList.contains('invisible') ? openModal(settingsModal, settingsPanel) : closeModal(settingsModal, settingsPanel); break;
+            }
+        });
+
+        // Time Capsule
+        const capsuleInput = document.getElementById('time-capsule-input');
+        const saveCapsuleBtn = document.getElementById('save-capsule-btn');
+        capsuleInput.value = localStorage.getItem('gateTimeCapsule') || '';
+        saveCapsuleBtn.addEventListener('click', () => {
+            localStorage.setItem('gateTimeCapsule', capsuleInput.value);
+            saveCapsuleBtn.textContent = 'Saved!';
+            setTimeout(() => { saveCapsuleBtn.textContent = 'Save Message'; }, 1500);
+        });
+
+        // --- OTHER CONTROLS ---
+        document.getElementById('dark-mode-toggle').addEventListener('click', () => docEl.classList.toggle('dark'));
+        document.getElementById('fullscreen-toggle').addEventListener('click', () => { if (!document.fullscreenElement) docEl.requestFullscreen(); else docEl.exitFullscreen(); });
+        document.addEventListener('fullscreenchange', () => {
+            const isFullscreen = !!document.fullscreenElement;
+            document.getElementById('expand-icon').classList.toggle('hidden', isFullscreen);
+            document.getElementById('shrink-icon').classList.toggle('hidden', !isFullscreen);
+        });
+        document.getElementById('minimal-mode-toggle').addEventListener('click', () => {
+            const isMinimal = appContainer.classList.toggle('minimal-mode');
+            document.getElementById('minimal-icon-off').classList.toggle('hidden', isMinimal);
+            document.getElementById('minimal-icon-on').classList.toggle('hidden', !isMinimal);
+        });
+        const bgToggle = document.getElementById('bg-toggle');
+        bgToggle.addEventListener('click', () => {
+            bgAnimated = !bgAnimated;
+            bgToggle.querySelector('span').classList.toggle('translate-x-5');
+            bgToggle.classList.toggle('bg-gray-200'); bgToggle.classList.toggle('bg-blue-600');
+            if(bgAnimated) startParticles(); else stopParticles();
+        });
+        let ambientSynth;
+        const musicToggle = document.getElementById('music-toggle');
+        musicToggle.addEventListener('click', async () => {
+            musicPlaying = !musicPlaying;
+            document.getElementById('music-on-icon').classList.toggle('hidden', musicPlaying);
+            document.getElementById('music-off-icon').classList.toggle('hidden', !musicPlaying);
+            if(musicPlaying) {
+                if(Tone.context.state !== 'running') await Tone.start();
+                if(!ambientSynth) ambientSynth = new Tone.FMSynth({ modulationIndex: 10, harmonicity: 3, envelope: { attack: 0.01, decay: 0.2 }, modulationEnvelope: { attack: 0.1, decay: 0.1 }}).toDestination();
+                if(Tone.Transport.state !== 'started') {
+                    const pattern = new Tone.Pattern((time, note) => { ambientSynth.triggerAttackRelease(note, "8n", time); }, ["C2", "G2", "C3", "E3"], "randomWalk").start(0);
+                    pattern.interval = "2n"; Tone.Transport.bpm.value = 60; Tone.Transport.start();
+                }
+            } else { if (Tone.Transport.state === 'started') Tone.Transport.stop(); }
+        });
+
+        // --- PARTICLE BACKGROUND ---
+        const canvas = document.getElementById('interactive-bg'), ctx = canvas.getContext('2d');
+        let particles = [];
+        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        function startParticles() {
+            if(particlesAnimationId) return; resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            particles = []; for(let i=0; i<50; i++) particles.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, vx: Math.random()*0.4-0.2, vy: Math.random()*0.4-0.2, r: Math.random()*1.5+0.5 });
+            animateParticles();
+        }
+        function stopParticles() {
+            window.removeEventListener('resize', resizeCanvas);
+            cancelAnimationFrame(particlesAnimationId); particlesAnimationId = null;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = docEl.classList.contains('dark') ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)';
+            particles.forEach(p => {
+                p.x += p.vx; p.y += p.vy;
+                if(p.x<0||p.x>canvas.width) p.vx*=-1; if(p.y<0||p.y>canvas.height) p.vy*=-1;
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+            });
+            particlesAnimationId = requestAnimationFrame(animateParticles);
+        }
+    });
+    </script>
+</body>
+</html>
