@@ -3,19 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vihar</title> <script src="https://cdn.tailwindcss.com"></script>
+    <title>Vihar</title>
+    <!-- React, ReactDOM, and Babel CDNs -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for Open Sans and Roboto Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&family=Roboto+Mono:ital,wght@1,400&display=swap" rel="stylesheet">
+
     <style>
         /* Define the keyframes for the swaying animation */
         @keyframes sway {
-            0% {
-                transform: translateY(0); /* Start at original position */
-            }
-            50% {
-                transform: translateY(-25px); /* Move up by 25 pixels */
-            }
-            100% {
-                transform: translateY(0); /* Return to original position */
-            }
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-25px); }
+            100% { transform: translateY(0); }
         }
 
         /* Keyframes for blinking cursor */
@@ -25,196 +28,319 @@
         }
 
         body {
-            /* Set a dark grayish background color */
-            background-color: #333;
-            /* Use flexbox to center the content both horizontally and vertically */
-            display: flex;
-            flex-direction: column; /* Arrange items in a column */
-            justify-content: center;
-            align-items: center;
+            /* Set a truly dark background color */
+            background-color: #121212; /* Very dark grey, almost black */
             /* Ensure the body takes at least the full height of the viewport */
             min-height: 100vh;
-            /* Set font to Inter as per guidelines */
-            font-family: 'Inter', sans-serif;
+            /* Set font to Open Sans as requested */
+            font-family: 'Open Sans', sans-serif;
             /* Prevent horizontal scrolling */
             overflow-x: hidden;
             /* Ensure the body is not too padded, allowing text to fill more */
             margin: 0;
             padding: 0;
+            color: #f0f0f0; /* Default text color for the body */
+            display: flex; /* Use flexbox for body to center root div */
+            flex-direction: column;
+            align-items: center; /* Center horizontally */
+            justify-content: flex-start; /* Align content to the top */
         }
 
+        /* Custom styles for the main text and changing role text */
         .main-text {
-            /* Use the 'Roboto Mono' font for the text, with italic style */
-            font-family: 'Roboto Mono', monospace; /* The requested font */
-            font-style: italic; /* Set font style to italic */
-            font-weight: 400; /* Set font weight to regular (400) */
-            /* Set a light color for the text */
+            font-family: 'Roboto Mono', monospace;
+            font-style: italic;
+            font-weight: 400;
             color: #f0f0f0;
-            /* Adjust font size to take up most of the screen */
-            font-size: 15vw; /* Use viewport width for responsive scaling */
-            /* Apply the swaying animation */
-            animation: sway 3s ease-in-out infinite alternate; /* 3s duration, smooth timing, infinite loop, alternates direction */
-            /* Ensure smooth rendering of the text */
+            font-size: 15vw; /* Responsive font size */
+            animation: sway 3s ease-in-out infinite alternate;
             text-rendering: optimizeLegibility;
-            /* Add a subtle text shadow for depth */
-            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.6); /* Slightly larger shadow */
-            /* Ensure the element has its own stacking context for transform */
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.6); /* Adjusted shadow for better contrast */
             position: relative;
-            /* Adjust letter spacing as 'Roboto Mono' is not cursive */
             letter-spacing: 0;
-            /* Prevent text from going outside the screen on very small viewports */
             white-space: nowrap;
             overflow: hidden;
             text-overflow: clip;
-            /* Add some margin below to separate from the changing text */
             margin-bottom: 20px;
-            /* Removed min-height here as the element is always visible and swaying */
         }
 
         .changing-role-text {
-            font-family: 'Roboto Mono', monospace; /* Match the main font */
-            font-style: normal; /* No italic for this text */
+            font-family: 'Roboto Mono', monospace;
+            font-style: normal;
             font-weight: 400;
-            color: #b0b0b0; /* Slightly dimmer color */
-            font-size: 3vw; /* Smaller, responsive font size */
+            color: #b0b0b0;
+            font-size: 3vw; /* Responsive font size */
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
             min-width: 200px; /* Ensure enough width to prevent layout shifts */
             text-align: center;
-            /* Add a blinking cursor effect */
             border-right: 2px solid #b0b0b0; /* Blinking cursor */
             animation: blink-caret .75s step-end infinite;
-            /* Set a minimum height to prevent layout shifts when text is empty */
             min-height: 4vw; /* Ensure enough height for the largest text at its font size */
-            display: inline-block; /* Ensure min-height applies correctly */
+            display: inline-block;
         }
 
-        /* Import Google Font 'Roboto Mono' with italic style */
-        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@1,400&display=swap');
-
-        /* Responsive adjustments for smaller screens (vw handles most of it, but can fine-tune) */
+        /* Responsive adjustments for smaller screens */
         @media (max-width: 768px) {
             .main-text {
-                font-size: 20vw; /* Make it even larger on smaller screens */
+                font-size: 20vw;
                 margin-bottom: 15px;
             }
             .changing-role-text {
                 font-size: 4vw;
                 min-width: 150px;
-                min-height: 5vw; /* Adjust min-height for smaller screens */
+                min-height: 5vw;
             }
         }
 
         @media (max-width: 480px) {
             .main-text {
-                font-size: 25vw; /* Maximize on very small screens */
+                font-size: 25vw;
                 margin-bottom: 10px;
             }
             .changing-role-text {
                 font-size: 5vw;
                 min-width: 100px;
-                min-height: 6vw; /* Adjust min-height for smallest screens */
+                min-height: 6vw;
             }
         }
     </style>
 </head>
 <body>
-    <h1 id="main-vihar-text" class="main-text">vihar</h1>
-    <span id="role-text" class="changing-role-text"></span>
+    <div id="root" class="flex flex-col items-center w-full pt-20"></div>
 
-    <script>
-        // --- Configuration ---
-        const mainTextElement = document.getElementById('main-vihar-text');
-        const roleTextElement = document.getElementById('role-text');
-        const mainWordForTitle = "Vihar"; // Word for the title bar
-        const roles = ["designer", "developer", "coder", "scripter", "fullstack dev"];
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
 
-        // Typing/Deleting speeds and pauses
-        const typingSpeed = 100; // Milliseconds per character
-        const deletingSpeed = 50; // Milliseconds per character
-        const pauseAfterTyping = 1500; // Pause after typing a word
-        const pauseAfterDeleting = 500; // Pause after deleting a word
+        // Component for the main "vihar" text with swaying animation
+        const MainText = () => {
+            return (
+                <h1 className="main-text">vihar</h1>
+            );
+        };
 
-        // --- Website Title Typing Logic ---
-        let titleCharIndex = 0;
-        let isTitleDeleting = false;
+        // Component for the changing role text with typing/deleting effect
+        const RoleTyper = ({ roles, typingSpeed, deletingSpeed, pauseAfterTyping, pauseAfterDeleting }) => {
+            const [displayText, setDisplayText] = useState('> '); // Initialize with the static prompt and space
+            const currentRoleIndexRef = useRef(0);
+            const roleCharIndexRef = useRef(0);
+            const isRoleDeletingRef = useRef(false);
+            const timerRef = useRef(null);
 
-        function typeWebsiteTitle() {
-            if (isTitleDeleting) {
-                // Deleting title text
-                document.title = mainWordForTitle.substring(0, titleCharIndex - 1);
-                titleCharIndex--;
-            } else {
-                // Typing title text
-                document.title = mainWordForTitle.substring(0, titleCharIndex + 1);
-                titleCharIndex++;
-            }
+            useEffect(() => {
+                const animateTyping = () => {
+                    const currentRole = roles[currentRoleIndexRef.current];
+                    let nextDelay;
 
-            let delay = typingSpeed;
+                    if (isRoleDeletingRef.current) {
+                        // Deleting current role
+                        if (roleCharIndexRef.current > 0) {
+                            roleCharIndexRef.current--;
+                            setDisplayText('> ' + currentRole.substring(0, roleCharIndexRef.current)); // Prepend '> '
+                            nextDelay = deletingSpeed;
+                        } else {
+                            // Done deleting, move to next role and start typing
+                            isRoleDeletingRef.current = false;
+                            currentRoleIndexRef.current = (currentRoleIndexRef.current + 1) % roles.length;
+                            roleCharIndexRef.current = 0;
+                            setDisplayText('> '); // Only '> ' when fully deleted
+                            nextDelay = pauseAfterDeleting;
+                        }
+                    } else { // Typing current role
+                        if (roleCharIndexRef.current < currentRole.length) {
+                            roleCharIndexRef.current++;
+                            setDisplayText('> ' + currentRole.substring(0, roleCharIndexRef.current)); // Prepend '> '
+                            nextDelay = typingSpeed;
+                        } else {
+                            // Done typing, pause then start deleting
+                            isRoleDeletingRef.current = true;
+                            nextDelay = pauseAfterTyping;
+                        }
+                    }
 
-            if (isTitleDeleting) {
-                delay = deletingSpeed;
-            }
+                    timerRef.current = setTimeout(animateTyping, nextDelay);
+                };
 
-            if (!isTitleDeleting && titleCharIndex === mainWordForTitle.length) {
-                // Done typing title, pause then start deleting
-                delay = pauseAfterTyping;
-                isTitleDeleting = true;
-            } else if (isTitleDeleting && titleCharIndex === 0) {
-                // Done deleting title, pause then start typing again
-                isTitleDeleting = false;
-                delay = pauseAfterDeleting;
-            }
+                // Initial call to start the typing effect after an initial delay
+                timerRef.current = setTimeout(animateTyping, 1000);
 
-            setTimeout(typeWebsiteTitle, delay);
-        }
+                // Cleanup function to clear the timeout when component unmounts
+                return () => clearTimeout(timerRef.current);
+            }, []); // Empty dependency array: runs once on mount.
 
-        // --- Changing Role Text Typing Logic ---
-        let currentRoleIndex = 0;
-        let roleCharIndex = 0;
-        let isRoleDeleting = false;
+            return (
+                <span className="changing-role-text">{displayText}</span>
+            );
+        };
 
-        function typeRoleText() {
-            const currentRole = roles[currentRoleIndex];
+        // Component for the dynamic website title
+        const WebsiteTitleTyper = ({ mainWordForTitle, typingSpeed, deletingSpeed, pauseAfterTyping, pauseAfterDeleting }) => {
+            const titleCharIndexRef = useRef(0);
+            const isTitleDeletingRef = useRef(false);
+            const titleTimerRef = useRef(null);
 
-            if (isRoleDeleting) {
-                // Deleting current role
-                roleTextElement.textContent = currentRole.substring(0, roleCharIndex - 1);
-                roleCharIndex--;
-            } else {
-                // Typing current role
-                roleTextElement.textContent = currentRole.substring(0, roleCharIndex + 1);
-                roleCharIndex++;
-            }
+            useEffect(() => {
+                const animateTitleTyping = () => {
+                    let nextDelay;
 
-            let delay = typingSpeed;
+                    if (isTitleDeletingRef.current) {
+                        // Deleting title text
+                        if (titleCharIndexRef.current > 0) {
+                            titleCharIndexRef.current--;
+                            document.title = mainWordForTitle.substring(0, titleCharIndexRef.current);
+                            nextDelay = deletingSpeed;
+                        } else {
+                            // Done deleting, start typing again
+                            isTitleDeletingRef.current = false;
+                            titleCharIndexRef.current = 0;
+                            nextDelay = pauseAfterDeleting;
+                        }
+                    } else { // Typing title text
+                        if (titleCharIndexRef.current < mainWordForTitle.length) {
+                            titleCharIndexRef.current++;
+                            document.title = mainWordForTitle.substring(0, titleCharIndexRef.current);
+                            nextDelay = typingSpeed;
+                        } else {
+                            // Done typing, pause then start deleting
+                            isTitleDeletingRef.current = true;
+                            nextDelay = pauseAfterTyping;
+                        }
+                    }
+                    titleTimerRef.current = setTimeout(animateTitleTyping, nextDelay);
+                };
 
-            if (isRoleDeleting) {
-                delay = deletingSpeed;
-            }
+                // Initial call to start the typing effect
+                titleTimerRef.current = setTimeout(animateTitleTyping, 0); // Start immediately with a minimal delay
 
-            if (!isRoleDeleting && roleCharIndex === currentRole.length) {
-                // Done typing role, pause then start deleting
-                delay = pauseAfterTyping;
-                isRoleDeleting = true;
-            } else if (isRoleDeleting && roleCharIndex === 0) {
-                // Done deleting role, move to next role and pause before typing
-                isRoleDeleting = false;
-                currentRoleIndex = (currentRoleIndex + 1) % roles.length;
-                delay = pauseAfterDeleting;
-            }
+                // Cleanup function to clear the timeout when component unmounts
+                return () => clearTimeout(titleTimerRef.current);
+            }, []); // Empty dependency array: runs once on mount.
 
-            setTimeout(typeRoleText, delay);
-        }
+            return null; // This component doesn't render anything directly to the DOM
+        };
 
-        // --- Start Animations on Page Load ---
-        document.addEventListener('DOMContentLoaded', () => {
-            // Set initial main text to 'vihar' (it will sway)
-            mainTextElement.textContent = "vihar";
-            // Start the website title typing animation
-            typeWebsiteTitle();
-            // Start the role text typing animation after a short delay
-            setTimeout(typeRoleText, 1000);
-        });
+        // Component for the project ID input section (now collapsible)
+        const ProjectLinker = () => {
+            const [projectId, setProjectId] = useState('');
+            const [isExpanded, setIsExpanded] = useState(false); // State for expansion
+            const [isAnimating, setIsAnimating] = useState(false); // State to control shrink animation
+            const baseUrl = "https://vihar.pages.dev/";
+            const contentRef = useRef(null); // Ref to measure content height
+
+            const handleGo = () => {
+                if (projectId.trim()) {
+                    window.open(`${baseUrl}${projectId.trim()}`, '_blank');
+                }
+            };
+
+            const handleKeyDown = (event) => {
+                if (event.key === 'Enter') {
+                    handleGo();
+                }
+            };
+
+            const toggleExpansion = () => {
+                setIsAnimating(true); // Start shrink animation
+                setTimeout(() => {
+                    setIsExpanded(prev => !prev); // Toggle expansion state
+                    // Allow CSS transitions to complete before removing shrink effect
+                    setTimeout(() => {
+                        setIsAnimating(false);
+                    }, 500); // Match this to max-height transition duration
+                }, 100); // Short delay for initial shrink effect
+            };
+
+            // Calculate max-height dynamically for smooth transition
+            const contentMaxHeight = isExpanded && contentRef.current ? contentRef.current.scrollHeight + 'px' : '0px';
+
+            return (
+                <div className={`mt-10 w-full max-w-lg mx-auto border border-gray-900 rounded-lg overflow-hidden transition-all duration-300 ease-in-out bg-gray-950 shadow-2xl
+                                ${isAnimating ? 'transform scale-[0.98]' : ''}`}>
+                    <button
+                        onClick={toggleExpansion}
+                        className="w-full flex items-center justify-between py-2 px-4 bg-gray-900 hover:bg-gray-700 text-gray-200 text-sm font-semibold transition-colors duration-200 rounded-t-lg"
+                        aria-expanded={isExpanded}
+                        aria-controls="project-content"
+                    >
+                        <span>Projects</span>
+                        <svg className={`w-4 h-4 transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
+
+                    {/* Content area with dynamic max-height and opacity for smooth transition */}
+                    <div
+                        id="project-content"
+                        style={{ maxHeight: contentMaxHeight, opacity: isExpanded ? 1 : 0 }}
+                        className="transition-all duration-500 ease-in-out"
+                    >
+                        <div ref={contentRef} className="p-6 bg-gray-800 text-gray-300">
+                            <p className="text-center mb-4 text-md">
+                                All of my projects are hosted with an ID.
+                            </p>
+                            <p className="text-center mb-6 text-sm">
+                                Enter the ID here or go to <a href={baseUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline">vihar.pages.dev/[insert id]</a>
+                            </p>
+                            <div className="flex w-full max-w-sm mx-auto rounded-lg overflow-hidden shadow-md">
+                                <input
+                                    type="text"
+                                    value={projectId}
+                                    onChange={(e) => setProjectId(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    placeholder="Enter project ID"
+                                    className="flex-grow p-3 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-l-lg border border-gray-600"
+                                    aria-label="Project ID"
+                                />
+                                <button
+                                    onClick={handleGo}
+                                    className="flex items-center justify-center p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-r-lg transition-colors duration-200"
+                                    aria-label="Go to project"
+                                >
+                                    {/* Inline SVG for the arrow icon */}
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-right">
+                                        <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Main App component
+        const App = () => {
+            const roles = ["designer", "developer", "coder", "scripter", "fullstack dev"];
+            const mainWordForTitle = "Vihar";
+            const typingSpeed = 100;
+            const deletingSpeed = 50;
+            const pauseAfterTyping = 1500;
+            const pauseAfterDeleting = 500;
+
+            return (
+                <div className="flex flex-col items-center justify-start w-full p-4"> {/* Changed justify-content to justify-start */}
+                    {/* WebsiteTitleTyper does not render anything visible, only updates document.title */}
+                    <WebsiteTitleTyper
+                        mainWordForTitle={mainWordForTitle}
+                        typingSpeed={typingSpeed}
+                        deletingSpeed={deletingSpeed}
+                        pauseAfterTyping={pauseAfterTyping}
+                        pauseAfterDeleting={pauseAfterDeleting}
+                    />
+                    <MainText />
+                    <RoleTyper
+                        roles={roles}
+                        typingSpeed={typingSpeed}
+                        deletingSpeed={deletingSpeed}
+                        pauseAfterTyping={pauseAfterTyping}
+                        pauseAfterDeleting={pauseAfterDeleting}
+                    />
+                    <ProjectLinker />
+                </div>
+            );
+        };
+
+        // Render the App component into the root div
+        ReactDOM.render(<App />, document.getElementById('root'));
     </script>
 </body>
 </html>
