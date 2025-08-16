@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>For My Mum</title>
+    <!-- Google Fonts for 'Poppins' -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #f3e5f5;
+            --text-color: #311b92;
+            --primary-color: #6a1b9a;
+            --accent-color: #ffb300;
+            --card-front-bg: #fffde7;
+            --card-back-bg: #f8bbd0;
+            --box-shadow-1: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --box-shadow-2: 0 10px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Dark Mode Theme */
+        body.dark-mode {
+            --bg-color: #2c2f33;
+            --text-color: #f5f5f5;
+            --primary-color: #7289da;
+            --accent-color: #f1c40f;
+            --card-front-bg: #4f545c;
+            --card-back-bg: #7289da;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+            transition: background-color 0.3s ease;
+        }
+
+        /* --- Header & Top Bar --- */
+        .top-bar {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            justify-content: flex-end;
+            padding: 10px 0;
+            position: absolute;
+            top: 0;
+        }
+
+        .icon-button {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-color);
+            cursor: pointer;
+            padding: 10px;
+            transition: transform 0.2s ease, color 0.2s ease;
+        }
+
+        .icon-button:hover {
+            transform: scale(1.1);
+            color: var(--primary-color);
+        }
+
+        /* --- Main Content Container --- */
+        .container {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+            padding-top: 50px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 0;
+            animation: fadeIn 1s ease-in-out;
+            transition: color 0.3s ease;
+        }
+
+        h2.birthday-message {
+            font-size: 1.5rem;
+            color: var(--accent-color);
+            margin-top: 5px;
+            animation: fadeIn 1.2s ease-in-out;
+        }
+
+        /* --- Jar and Button Section --- */
+        .jar-container {
+            position: relative;
+            width: 100%;
+            max-width: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            animation: slideInFromTop 1s ease-out;
+        }
+
+        .jar {
+            width: 100%;
+            height: 300px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 50% / 10%;
+            position: relative;
+            box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.5), 0 15px 20px rgba(0, 0, 0, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            transition: background-color 0.3s ease;
+            overflow: hidden;
+        }
+
+        .jar::before { /* Jar top */
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 20%;
+            right: 20%;
+            height: 40px;
+            background-color: #f0f0f0;
+            border-radius: 50% / 50%;
+            box-shadow: 0 -5px 10px rgba(0, 0, 0, 0.1);
+            z-index: -1;
+        }
+        
+        body.dark-mode .jar::before {
+            background-color: #3e4247;
+        }
+        
+        .jar-lid {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70%;
+            height: 40px;
+            background-color: #8b4513; /* A nice brown color for the lid */
+            border-radius: 10px;
+            z-index: 1;
+            transition: all 0.8s ease-in-out;
+        }
+        
+        .jar-lid.lid-off {
+            transform: translate(-50%, -200px) rotate(45deg);
+            opacity: 0;
+        }
+
+        /* The folded paper pieces inside the jar */
+        .paper-piece {
+            position: absolute;
+            background-color: var(--card-front-bg);
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            width: 30px;
+            height: 20px;
+            opacity: 0.9;
+            transition: all 0.5s ease-out;
+        }
+
+        /* Styling for the animated paper piece that flies out */
+        .paper-piece.active {
+            animation: flyUpAndGrow 1s forwards cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            z-index: 5;
+        }
+        
+        .jar-button {
+            padding: 15px 30px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--box-shadow-1);
+        }
+
+        .jar-button:disabled {
+            background-color: #aaa;
+            cursor: not-allowed;
+        }
+
+        .jar-button:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: var(--box-shadow-2);
+            filter: brightness(1.1);
+        }
+
+        .jar-button:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+
+        /* --- Card Section --- */
+        .card-wrapper {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            perspective: 1000px;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            z-index: 10;
+        }
+
+        .card {
+            width: 280px;
+            height: 180px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s ease;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: var(--box-shadow-2);
+            border: 2px solid var(--text-color);
+        }
+
+        .card.is-flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card.is-opened {
+            animation: slideDownAndOut 1s forwards cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+
+        .card-face {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        .card-back {
+            background-color: var(--card-back-bg);
+            transform: rotateY(0deg);
+            transition: background-color 0.3s ease;
+        }
+
+        .card-front {
+            background-color: var(--card-front-bg);
+            transform: rotateY(180deg);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            line-height: 1.4;
+            color: var(--text-color);
+            font-weight: bold;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .card-front p {
+            margin: 0;
+        }
+
+        /* --- Opened Cards Section --- */
+        .opened-cards-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .opened-cards-container h2 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+            transition: color 0.3s ease;
+        }
+
+        .opened-card {
+            width: 80%;
+            max-width: 400px;
+            background-color: var(--card-front-bg);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: var(--box-shadow-1);
+            text-align: center;
+            font-style: italic;
+            transition: all 0.5s ease-out;
+            margin-bottom: 15px;
+            border: 2px solid var(--text-color);
+        }
+
+        /* --- Modal Styling --- */
+        .modal {
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility 0s, opacity 0.3s ease;
+        }
+
+        .modal.show-modal {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background-color: var(--bg-color);
+            padding: 30px;
+            border-radius: 20px;
+            width: 80%;
+            max-width: 400px;
+            box-shadow: var(--box-shadow-2);
+            transition: background-color 0.3s ease;
+        }
+
+        .modal-content h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+
+        .close-button {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 2rem;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .close-button:hover {
+            color: var(--primary-color);
+        }
+
+        /* --- Animations --- */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideInFromTop {
+            from { transform: translateY(-100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* New animation for the paper piece flying up and out */
+        @keyframes flyUpAndGrow {
+            0% {
+                transform: translate(-50%, 100px) scale(0.5);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -200px) scale(1.5) rotate(720deg);
+                opacity: 0;
+            }
+        }
+        
+        /* Card flies down into opened section */
+        @keyframes slideDownAndOut {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(200px); opacity: 0; }
+        }
+
+        /* --- Mobile Responsiveness --- */
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            h2.birthday-message {
+                font-size: 1.2rem;
+            }
+
+            .jar {
+                height: 250px;
+            }
+
+            .jar-button {
+                padding: 12px 25px;
+            }
+
+            .card {
+                width: 250px;
+                height: 150px;
+            }
+
+            .card-front {
+                font-size: 1.1rem;
+            }
+
+            .opened-card {
+                width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>For My Amazing Mum</h1>
+        <h2 class="birthday-message">Happy Birthday, Mum!</h2>
+        <div class="jar-container">
+            <div class="jar" id="jar">
+                <!-- Jar Lid -->
+                <div class="jar-lid" id="jarLid"></div>
+
+                <!-- Static paper pieces inside the jar to make it look full -->
+                <div class="paper-piece" style="left: 15%; top: 25%; transform: rotate(-10deg);"></div>
+                <div class="paper-piece" style="left: 55%; top: 40%; transform: rotate(15deg);"></div>
+                <div class="paper-piece" style="left: 45%; top: 55%; transform: rotate(5deg);"></div>
+                <div class="paper-piece" style="left: 80%; top: 30%; transform: rotate(20deg);"></div>
+                <div class="paper-piece" style="left: 20%; top: 65%; transform: rotate(-5deg);"></div>
+                <div class="paper-piece" style="left: 30%; top: 20%; transform: rotate(12deg);"></div>
+                <div class="paper-piece" style="left: 70%; top: 75%; transform: rotate(-18deg);"></div>
+                <div class="paper-piece" style="left: 85%; top: 50%; transform: rotate(8deg);"></div>
+                <div class="paper-piece" style="left: 10%; top: 80%; transform: rotate(-22deg);"></div>
+            </div>
+            <button id="drawCardBtn" class="jar-button">
+                <i class="fas fa-gift"></i> Get a Compliment
+            </button>
+        </div>
+
+        <!-- The card element that will be animated -->
+        <div id="cardWrapper" class="card-wrapper">
+            <div id="complimentCard" class="card">
+                <div class="card-face card-back">
+                    <i class="fas fa-envelope fa-2x"></i>
+                </div>
+                <div class="card-face card-front">
+                    <p id="complimentText"></p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Opened cards section -->
+        <div class="opened-cards-container">
+            <h2>Opened Compliments</h2>
+            <div id="openedCardsList">
+                <!-- Opened cards will be injected here by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM Elements
+            const drawCardBtn = document.getElementById('drawCardBtn');
+            const cardWrapper = document.getElementById('cardWrapper');
+            const complimentCard = document.getElementById('complimentCard');
+            const complimentText = document.getElementById('complimentText');
+            const openedCardsList = document.getElementById('openedCardsList');
+            const themeToggle = document.getElementById('themeToggle');
+            const jar = document.getElementById('jar');
+            const jarLid = document.getElementById('jarLid');
+
+            // Array of compliments
+            const allCompliments = [
+                "Your hugs are the best comfort in the world.",
+                "You have a heart of gold.",
+                "Your laugh is my favorite sound.",
+                "You are my biggest inspiration.",
+                "Thank you for everything you do, big and small.",
+                "Your strength and resilience are unmatched.",
+                "I am so lucky to have you as my mum.",
+                "You make the world a better place just by being in it.",
+                "Your wisdom guides me every day.",
+                "You're a truly amazing person, inside and out.",
+                "I admire your kindness and generosity.",
+                "Thank you for always believing in me.",
+                "You're the kindest person I know.",
+                "You're the best cook in the world!",
+                "Every day with you is a gift.",
+                "You have the most beautiful soul.",
+                "Your love makes me feel safe and cherished.",
+                "You are an incredible role model.",
+                "I love the way you see the good in people.",
+                "Your smile brightens my day."
+            ];
+
+            let openedCompliments = [];
+            let isCardAnimating = false;
+
+            // --- Local Storage Functions ---
+            const loadState = () => {
+                const storedCompliments = localStorage.getItem('openedCompliments');
+                if (storedCompliments) {
+                    openedCompliments = JSON.parse(storedCompliments);
+                    renderOpenedCards();
+                    // If any compliments are already opened, hide the lid
+                    if (openedCompliments.length > 0) {
+                        jarLid.style.display = 'none';
+                    }
+                } else {
+                    // This is the first time, make sure the lid is visible
+                    jarLid.style.display = 'block';
+                }
+
+                // Default to dark mode if no theme is saved
+                const storedTheme = localStorage.getItem('theme');
+                if (storedTheme === 'dark' || !storedTheme) {
+                    document.body.classList.add('dark-mode');
+                    themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+                }
+            };
+
+            const saveCompliments = () => {
+                localStorage.setItem('openedCompliments', JSON.stringify(openedCompliments));
+            };
+
+            // --- UI Rendering Functions ---
+            const renderOpenedCards = () => {
+                openedCardsList.innerHTML = '';
+                openedCompliments.forEach(compliment => {
+                    const cardDiv = document.createElement('div');
+                    cardDiv.className = 'opened-card';
+                    cardDiv.textContent = compliment;
+                    openedCardsList.appendChild(cardDiv);
+                });
+            };
+
+            // --- Animation and Interaction Logic ---
+            const drawNewCard = () => {
+                if (isCardAnimating) return;
+                isCardAnimating = true;
+
+                const availableCompliments = allCompliments.filter(c => !openedCompliments.includes(c));
+                
+                if (availableCompliments.length === 0) {
+                    drawCardBtn.disabled = true;
+                    drawCardBtn.textContent = "All cards opened!";
+                    isCardAnimating = false;
+                    return;
+                }
+
+                drawCardBtn.disabled = true;
+
+                const compliment = availableCompliments[Math.floor(Math.random() * availableCompliments.length)];
+                
+                // Animate lid removal for the first time
+                const isFirstCompliment = openedCompliments.length === 0;
+                if (isFirstCompliment) {
+                    jarLid.classList.add('lid-off');
+                    jarLid.addEventListener('transitionend', () => {
+                         jarLid.style.display = 'none';
+                    }, { once: true });
+                }
+
+                // Wait for the lid animation to finish before animating the paper piece
+                setTimeout(() => {
+                    // Create and animate a new paper piece
+                    const paperPiece = document.createElement('div');
+                    paperPiece.className = 'paper-piece active';
+                    jar.appendChild(paperPiece);
+
+                    // Wait for the fly-out animation to finish
+                    paperPiece.addEventListener('animationend', () => {
+                        paperPiece.remove();
+
+                        // Show the main card and prepare it for flipping
+                        complimentText.textContent = compliment;
+                        complimentCard.classList.remove('is-flipped');
+                        cardWrapper.style.visibility = 'visible';
+                        cardWrapper.style.opacity = '1';
+                        
+                        isCardAnimating = false;
+                        drawCardBtn.disabled = false;
+                    }, { once: true });
+                }, isFirstCompliment ? 800 : 0); // Delay if lid animation is playing
+            };
+
+            const flipCard = () => {
+                if (isCardAnimating || complimentCard.classList.contains('is-flipped')) {
+                    return;
+                }
+                
+                isCardAnimating = true;
+                complimentCard.classList.add('is-flipped');
+                
+                // Wait for the flip animation to finish
+                setTimeout(() => {
+                    const currentCompliment = complimentText.textContent;
+                    openedCompliments.unshift(currentCompliment);
+                    saveCompliments();
+                    renderOpenedCards();
+                    
+                    // Animate card down to the opened section, giving time to read
+                    setTimeout(() => {
+                        complimentCard.classList.add('is-opened');
+
+                        setTimeout(() => {
+                            // Reset and hide the card after the animation is done
+                            cardWrapper.style.opacity = '0';
+                            cardWrapper.style.visibility = 'hidden';
+                            complimentCard.classList.remove('is-opened');
+                            isCardAnimating = false;
+                        }, 1000); // Match animation duration
+                    }, 2000); // Wait for 2 seconds to allow the user to read
+                }, 600); // Wait for the flip animation to finish
+            };
+
+            // --- Event Listeners ---
+            drawCardBtn.addEventListener('click', drawNewCard);
+            complimentCard.addEventListener('click', flipCard);
+
+            themeToggle.addEventListener('click', () => {
+                document.body.classList.toggle('dark-mode');
+                const isDarkMode = document.body.classList.contains('dark-mode');
+                localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+                themeToggle.innerHTML = isDarkMode ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+            });
+
+            // Initial state load
+            loadState();
+        });
+    </script>
+</body>
+</html>
