@@ -1,10 +1,23 @@
 (function() {
-    // --- Configuration ---
+    // --- Configuration & Constants ---
     const APP_ID = 'chatium-bookmarklet-app';
     const APP_NAME = 'chatium';
-    const ANNOUNCEMENT_URL = 'https://cuxdi.nekoweb.org/anc.txt';
     const LOGO_URL = 'https://cuxdi.nekoweb.org/chatium-logo.png';
-    const DEFAULT_SETTINGS = { roomCode: 'rpschat', keybind: 'Shift+C', width: 55, height: 45 };
+    const DEFAULT_SETTINGS = { 
+        roomCode: 'rpschat', 
+        keybind: 'Shift+C', 
+        width: 55, 
+        height: 45, 
+        showAncNotifications: true, // New setting
+        isPanelUnlocked: false      // New setting
+    };
+    
+    const LANYARD_API_URL = 'https://api.lanyard.rest/v1/users/1156381555875385484';
+    const LANYARD_PUT_KEY = 'anc';
+    const LANYARD_AUTH_TOKEN = '7ec87932736ad0f082203f3abb112e8b';
+    const UNLOCK_CODE = '8508';
+    const POLLING_INTERVAL = 10000; // 10 seconds
+
     let settings = DEFAULT_SETTINGS;
     let container = document.getElementById(APP_ID);
     let isHidden = false;
@@ -15,6 +28,9 @@
     let isDragging = false;
     let isResizing = false;
     let initialX, initialY;
+    
+    let currentAnnouncement = null; // State for tracking the latest announcement
+    let announcementInterval = null;
 
     // --- Utility Functions ---
     function loadSettings() {
@@ -24,10 +40,13 @@
                 const loaded = JSON.parse(storedSettings);
                 settings = { 
                     ...DEFAULT_SETTINGS, 
+                    // Load existing values, falling back to defaults
                     roomCode: loaded.roomCode || DEFAULT_SETTINGS.roomCode,
                     keybind: loaded.keybind || DEFAULT_SETTINGS.keybind,
                     width: loaded.width || DEFAULT_SETTINGS.width,
                     height: loaded.height || DEFAULT_SETTINGS.height,
+                    showAncNotifications: loaded.showAncNotifications !== undefined ? loaded.showAncNotifications : DEFAULT_SETTINGS.showAncNotifications,
+                    isPanelUnlocked: loaded.isPanelUnlocked || DEFAULT_SETTINGS.isPanelUnlocked,
                 };
             }
         } catch (e) { console.error("Failed to load settings:", e); }
@@ -35,9 +54,16 @@
 
     function saveSettings() {
         try {
-            const settingsToSave = { roomCode: settings.roomCode, keybind: settings.keybind, width: settings.width, height: settings.height };
+            const settingsToSave = { 
+                roomCode: settings.roomCode, 
+                keybind: settings.keybind, 
+                width: settings.width, 
+                height: settings.height,
+                showAncNotifications: settings.showAncNotifications,
+                isPanelUnlocked: settings.isPanelUnlocked
+            };
             localStorage.setItem('chatiumSettings', JSON.stringify(settingsToSave));
-            showNotification('settings saved!');
+            // Removed notification for saving settings to reduce clutter
         } catch (e) { console.error("Failed to save settings:", e); showNotification('error saving settings. browser storage may be restricted.', 5000); }
     }
 
@@ -68,11 +94,19 @@
         setTimeout(() => { if (notif && notif.parentNode) { notif.remove(); } }, duration);
     }
     
-    function showMinimizeNotification() {
-        const message = `psst, hit <strong>${settings.keybind.toLowerCase()}</strong> to pop me back up!`;
-        showNotification(message, 3000);
+    // Notification for new announcement (triggers three times)
+    function triggerNewAnnouncementNotification(ancText) {
+        if (!settings.showAncNotifications) return;
+
+        const alarmEmoji = '🚨';
+        const notifMsg = `${alarmEmoji} <strong class="text-red-400">NEW ANNOUNCEMENT</strong> ${alarmEmoji}<br><span class="text-xs italic">${ancText}</span>`;
+        
+        // Simulate three sequential notifications
+        showNotification(notifMsg, 1500);
+        setTimeout(() => showNotification(notifMsg, 1500), 500);
+        setTimeout(() => showNotification(notifMsg, 1500), 1000);
     }
-    
+
     function toggleAppVisibility() {
         if (!container) return;
         if (isHidden) {
@@ -81,11 +115,11 @@
         } else {
             container.style.display = 'none';
             isHidden = true;
-            showMinimizeNotification();
         }
+        // Removed all notifications after keybind/button press
     }
 
-    // --- Keybind Logic ---
+    // --- Keybind Logic (Unchanged) ---
     function handleKeybind(e) {
         if (isRecordingKeybind) return;
         let keys = [];
@@ -136,9 +170,10 @@
         const setKeybindBtn = document.getElementById('set-keybind-btn');
 
         let keys = [];
-        if (e.shiftKey && e.key.toUpperCase() !== 'SHIFT') keys.push('Shift');
-        if (e.ctrlKey && e.key.toUpperCase() !== 'CONTROL') keys.push('Ctrl');
-        if (e.altKey && e.key.toUpperCase() !== 'ALT') keys.push('Alt');
+        if (e.shiftKey && e.ctrlKey && e.altKey) { keys.push('Shift+Ctrl+Alt'); }
+        else if (e.shiftKey && e.key.toUpperCase() !== 'SHIFT') keys.push('Shift');
+        else if (e.ctrlKey && e.key.toUpperCase() !== 'CONTROL') keys.push('Ctrl');
+        else if (e.altKey && e.key.toUpperCase() !== 'ALT') keys.push('Alt');
 
         const mainKey = e.key.toUpperCase();
         if (mainKey !== 'SHIFT' && mainKey !== 'CONTROL' && mainKey !== 'ALT') {
@@ -147,8 +182,8 @@
         
         recordedKeybind = keys.join('+');
 
-        if (recordedKeybind.length === 0) {
-             showNotification('please press a main key along with modifiers.', 3000);
+        if (recordedKeybind.length === 0 || keys.length === 0) {
+             showNotification('please press a main key along with modifiers (or just a key).', 3000);
              document.addEventListener('keydown', captureKeybind, { once: true, capture: true });
              return;
         }
@@ -163,7 +198,7 @@
         isRecordingKeybind = false;
     }
 
-    // --- Drag and Resize Handlers ---
+    // --- Drag and Resize Handlers (Unchanged) ---
     const dragStart = (e) => {
         if (isFullscreen || e.target.closest('button')) return;
         isDragging = true;
@@ -255,7 +290,208 @@
         document.addEventListener('mouseup', resizeEnd);
     };
 
-    // --- Dependency and Style Injection ---
+    // --- Announcement and Admin Logic ---
+    function updateAnnouncementDisplay(text, isError = false) {
+        const container = document.getElementById('announcement-display');
+        if (container) {
+            container.innerHTML = isError 
+                ? `<p class="text-xs text-red-500">${text}</p>`
+                : `<p class="text-sm italic">${text || 'No current announcement.'}</p>`;
+        }
+    }
+    
+    function fetchAndCheckAnnouncement() {
+        fetch(LANYARD_API_URL)
+            .then(response => response.json())
+            .then(data => {
+                const newAnnouncement = data?.data?.kv?.anc || '';
+                
+                // On first load (initial check)
+                if (currentAnnouncement === null) {
+                    currentAnnouncement = newAnnouncement;
+                    updateAnnouncementDisplay(newAnnouncement);
+                    return;
+                }
+                
+                // Check for difference and trigger notifications
+                if (newAnnouncement && newAnnouncement !== currentAnnouncement) {
+                    currentAnnouncement = newAnnouncement;
+                    updateAnnouncementDisplay(newAnnouncement);
+                    triggerNewAnnouncementNotification(newAnnouncement);
+                } else if (newAnnouncement !== currentAnnouncement) {
+                    // Handle case where announcement is removed or set to empty
+                    currentAnnouncement = newAnnouncement;
+                    updateAnnouncementDisplay(newAnnouncement);
+                }
+
+                // Update panel UI placeholder if the panel is unlocked
+                if (settings.isPanelUnlocked) {
+                    const newAncInput = document.getElementById('new-anc-input');
+                    if (newAncInput) newAncInput.placeholder = currentAnnouncement;
+                }
+            })
+            .catch(error => {
+                console.error("Lanyard API error:", error);
+                updateAnnouncementDisplay('Failed to load announcements.', true);
+            });
+    }
+
+    function startAnnouncementPolling() {
+        if (announcementInterval) clearInterval(announcementInterval);
+        fetchAndCheckAnnouncement(); // Initial check
+        announcementInterval = setInterval(fetchAndCheckAnnouncement, POLLING_INTERVAL);
+    }
+    
+    // Function with exponential backoff for Lanyard PUT request
+    async function retryFetch(url, options, maxRetries = 5) {
+        let lastError = null;
+        for (let i = 0; i < maxRetries; i++) {
+            try {
+                const response = await fetch(url, options);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status} - ${await response.text().catch(() => 'No body')}`);
+                }
+                return response;
+            } catch (error) {
+                lastError = error;
+                const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+        throw new Error(`Failed to update announcement after ${maxRetries} attempts: ${lastError ? lastError.message : 'Unknown error'}`);
+    }
+
+    async function setAnnouncement(newAncText) {
+        const url = `${LANYARD_API_URL}/kv/${LANYARD_PUT_KEY}`;
+        
+        const options = {
+            method: 'PUT',
+            headers: {
+                'Authorization': LANYARD_AUTH_TOKEN,
+                'Content-Type': 'text/plain', 
+            },
+            body: newAncText // The text content
+        };
+
+        const setBtn = document.getElementById('set-anc-btn');
+        if (setBtn) {
+            setBtn.disabled = true;
+            setBtn.textContent = 'setting...';
+        }
+
+        try {
+            await retryFetch(url, options);
+            showNotification('announcement updated successfully!', 4000);
+            
+            // Immediately update the current state in the app
+            currentAnnouncement = newAncText; 
+            updateAnnouncementDisplay(newAncText);
+            updatePanelUI(); // Re-render panel to update placeholder
+
+        } catch (error) {
+            console.error('Failed to set announcement:', error);
+            showNotification(`error setting announcement: ${error.message.substring(0, 100)}...`, 6000);
+        } finally {
+            if (setBtn) {
+                setBtn.disabled = false;
+                setBtn.textContent = 'set announcement';
+            }
+        }
+    }
+    
+    // --- Panel Content Generation ---
+    function getLockedContent() {
+        return `
+            <h3 class="text-xl font-semibold mb-3">locked <i class="fas fa-lock ml-1"></i></h3>
+            <p class="lowercase text-gray-400 mb-6">access the admin panel by entering the 4-digit code.</p>
+            <div class="bg-primary p-4 rounded-lg border border-gray-700">
+                <h4 class="text-lg font-semibold mb-2 lowercase">panel code</h4>
+                <div class="flex space-x-2">
+                    <input type="password" id="unlock-code-input" maxlength="4" placeholder="••••" class="flex-grow p-2 rounded bg-primary border border-gray-700 text-gray-200 focus:ring-accent focus:border-accent text-center font-mono tracking-widest" inputmode="numeric">
+                    <button id="unlock-btn" class="p-2 rounded bg-red-700 text-white font-semibold hover:bg-red-600 transition-colors whitespace-nowrap lowercase">unlock</button>
+                </div>
+            </div>
+        `;
+    }
+
+    function getPanelContent() {
+        return `
+            <h3 class="text-xl font-semibold mb-3">admin panel <i class="fas fa-unlock ml-1 text-green-500"></i></h3>
+            <p class="lowercase text-gray-400 mb-6">control announcements and notification settings.</p>
+            
+            <!-- Set Announcement -->
+            <div class="bg-primary p-4 rounded-lg mb-6 border border-gray-700">
+                <h4 class="text-lg font-bold mb-2 lowercase text-accent flex items-center"><i class="fas fa-bullhorn mr-2"></i> set announcement</h4>
+                <p class="text-xs text-gray-500 mb-2">current: <strong class="text-gray-300 italic">${currentAnnouncement || 'No announcement set.'}</strong></p>
+                <div class="flex space-x-2">
+                    <input type="text" id="new-anc-input" placeholder="${currentAnnouncement || 'enter new announcement text'}" class="flex-grow p-2 rounded bg-gray-800 border border-gray-700 text-gray-200 focus:ring-accent focus:border-accent lowercase">
+                    <button id="set-anc-btn" class="p-2 rounded bg-green-700 text-white font-semibold hover:bg-green-600 transition-colors whitespace-nowrap lowercase">set announcement</button>
+                </div>
+            </div>
+
+            <!-- Notification Toggle -->
+            <div class="bg-primary p-4 rounded-lg border border-gray-700">
+                <h4 class="text-lg font-bold mb-2 lowercase text-accent flex items-center"><i class="fas fa-bell mr-2"></i> notification settings</h4>
+                <label class="inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="anc-notif-checkbox" class="form-checkbox h-5 w-5 text-accent rounded transition duration-150 ease-in-out bg-gray-700 border-gray-600" ${settings.showAncNotifications ? 'checked' : ''}>
+                    <span class="ml-3 text-gray-300 lowercase">show new announcement notifications</span>
+                </label>
+            </div>
+        `;
+    }
+
+    // --- Panel UI Update and Handlers ---
+    function updatePanelUI() {
+        const lockedItem = document.querySelector('[data-content-id="locked"]');
+        const lockedPanel = document.getElementById('locked-content');
+        
+        if (!lockedItem || !lockedPanel) return;
+
+        lockedItem.querySelector('span').textContent = settings.isPanelUnlocked ? 'panel' : 'locked';
+        lockedItem.querySelector('i').className = settings.isPanelUnlocked ? 'fas fa-unlock-alt sidebar-item-icon mr-3' : 'fas fa-lock sidebar-item-icon mr-3';
+
+        if (settings.isPanelUnlocked) {
+            lockedPanel.innerHTML = getPanelContent();
+            
+            // Attach Set Announcement Handler
+            document.getElementById('set-anc-btn')?.addEventListener('click', () => {
+                const newAncInput = document.getElementById('new-anc-input');
+                setAnnouncement(newAncInput.value.trim());
+                newAncInput.value = ''; 
+            });
+            
+            // Attach Notification Checkbox Handler
+            const notifCheckbox = document.getElementById('anc-notif-checkbox');
+            if (notifCheckbox) {
+                notifCheckbox.checked = settings.showAncNotifications;
+                notifCheckbox.addEventListener('change', (e) => {
+                    settings.showAncNotifications = e.target.checked;
+                    saveSettings();
+                    showNotification(`announcement notifications ${e.target.checked ? 'enabled' : 'disabled'}.`);
+                });
+            }
+
+        } else {
+            lockedPanel.innerHTML = getLockedContent();
+            
+            // Attach Unlock Button Handler
+            document.getElementById('unlock-btn')?.addEventListener('click', () => {
+                const unlockCodeInput = document.getElementById('unlock-code-input');
+                if (unlockCodeInput.value === UNLOCK_CODE) {
+                    settings.isPanelUnlocked = true;
+                    saveSettings();
+                    showNotification('panel unlocked! settings will persist for this site.', 4000);
+                    updatePanelUI(); // Re-render the panel now that it's unlocked
+                } else {
+                    showNotification('incorrect code. try again.', 3000);
+                    unlockCodeInput.value = '';
+                }
+            });
+        }
+    }
+
+
+    // --- Dependency and Style Injection (Modified for new look) ---
     function injectDependencies() {
         // 1. Inject Tailwind CSS
         if (!document.querySelector('script[src*="cdn.tailwindcss.com"]')) {
@@ -385,7 +621,7 @@
                             
                             <!-- Announcements -->
                             <div class="bg-primary p-4 rounded-lg mb-6 border border-gray-700">
-                                <h4 class="text-lg font-bold mb-2 text-accent lowercase flex items-center"><i class="fas fa-bullhorn mr-2"></i> announcements</h4>
+                                <h4 class="text-lg font-bold mb-2 text-accent lowercase flex items-center"><i class="fas fa-bullhorn mr-2"></i> announcements (live)</h4>
                                 <div id="announcement-display" class="text-gray-300"><p class="text-xs text-gray-500">loading announcements...</p></div>
                             </div>
 
@@ -457,7 +693,7 @@
                                 <h3 class="text-4xl font-extrabold mb-1">CHATIUM</h3>
                                 <p class="text-lg font-mono text-gray-400 mb-6 lowercase">hack.chat wrapper</p>
                                 <ul class="text-left space-y-2 mb-8 text-gray-300 w-full max-w-xs">
-                                    <li class="lowercase"><i class="fas fa-code mr-2 text-accent"></i> Version: 0.5.0</li>
+                                    <li class="lowercase"><i class="fas fa-code mr-2 text-accent"></i> Version: 0.6.0</li>
                                     <li class="lowercase"><i class="fas fa-user-tie mr-2 text-accent"></i> Developer: vihar</li>
                                     <li class="lowercase"><i class="fas fa-hands-helping mr-2 text-accent"></i> Helper: eugene</li>
                                     <li class="lowercase"><i class="fas fa-laptop-code mr-2 text-accent"></i> Language: javascript</li>
@@ -477,6 +713,11 @@
                                 </div>
                                 <p class="mt-8 text-sm text-gray-500">made with <i class="fas fa-heart text-red-500"></i> by vihar</p>
                             </div>
+                        </div>
+
+                        <!-- 5. LOCKED/PANEL CONTENT -->
+                        <div id="locked-content" class="content-panel h-full hidden p-6 text-gray-200 bg-[#1a1a18]">
+                            <!-- Content generated by updatePanelUI() -->
                         </div>
                     </div>
                 </div>
@@ -513,6 +754,7 @@
             { id: 'help', icon: 'fas fa-question-circle', label: 'help' },
             { id: 'errors', icon: 'fas fa-exclamation-triangle', label: 'errors' },
             { id: 'about', icon: 'fas fa-info-circle', label: 'about' },
+            { id: 'locked', icon: settings.isPanelUnlocked ? 'fas fa-unlock-alt' : 'fas fa-lock', label: settings.isPanelUnlocked ? 'panel' : 'locked' },
         ];
 
 
@@ -525,28 +767,12 @@
         });
         
         const sidebarItems = container.querySelectorAll('.sidebar-item');
-
         const reloadIframeBtn = document.getElementById('reload-iframe-btn');
         const reloadFullBtn = document.getElementById('reload-full-btn');
         
-        // --- Announcement Fetcher ---
-        function fetchAnnouncement() {
-            fetch(ANNOUNCEMENT_URL)
-                .then(response => response.ok ? response.text() : Promise.reject('Network response was not ok'))
-                .then(text => {
-                    const container = document.getElementById('announcement-display');
-                    if (container) container.innerHTML = `<p class="text-sm italic">${text}</p>`;
-                })
-                .catch(error => {
-                    const container = document.getElementById('announcement-display');
-                    if (container) container.innerHTML = `<p class="text-xs text-red-500">Failed to load announcements.</p>`;
-                });
-        }
-
-
         // --- Core Event Handlers ---
 
-        closeButton.addEventListener('click', () => container.remove());
+        closeButton.addEventListener('click', () => { container.remove(); clearInterval(announcementInterval); });
         minimizeButton.addEventListener('click', toggleAppVisibility);
 
         // Fullscreen Toggle
@@ -587,6 +813,11 @@
                 if(widthValue) widthValue.textContent = settings.width;
                 if(heightValue) heightValue.textContent = settings.height;
             }
+            
+            // Re-run panel UI setup if locked is selected, to ensure fresh handlers
+            if (defaultContentId === 'locked') {
+                updatePanelUI();
+            }
         }
 
         hamburgerButton.addEventListener('click', () => {
@@ -609,6 +840,7 @@
 
         reloadFullBtn.addEventListener('click', () => {
             container.remove();
+            clearInterval(announcementInterval);
             container = null;
             startBookmarkletApp();
             showNotification('full app restart complete.');
@@ -621,6 +853,10 @@
                 item.classList.add('active');
                 contentPanels.forEach(cp => cp.classList.add('hidden'));
                 document.getElementById(`${contentId}-content`).classList.remove('hidden');
+
+                if (contentId === 'locked') {
+                    updatePanelUI(); // Call updatePanelUI to ensure correct content and handlers are set
+                }
             });
         });
 
@@ -633,6 +869,7 @@
             if(helpRoomCodeDisplay) helpRoomCodeDisplay.textContent = newCode;
             document.getElementById('external-chat-link').href = `https://hack.chat/?${newCode}`;
             saveSettings();
+            showNotification('room code updated. chat reloaded.');
         });
 
         if(keybindInput) addMultipleListeners(keybindInput, ['click', 'focus'], (e) => { e.preventDefault(); startKeybindRecording(); });
@@ -652,23 +889,24 @@
             settings.width = newWidth;
             container.style.width = `${newWidth}vw`;
             widthValue.textContent = newWidth;
-            saveSettings();
         });
+        if(widthSlider) widthSlider.addEventListener('change', saveSettings);
 
         if(heightSlider) heightSlider.addEventListener('input', (e) => {
             const newHeight = parseInt(e.target.value);
             settings.height = newHeight;
             container.style.height = `${newHeight}vh`;
             heightValue.textContent = newHeight;
-            saveSettings();
         });
+        if(heightSlider) heightSlider.addEventListener('change', saveSettings);
 
         // --- Drag and Resize Setup ---
         addMultipleListeners(header, ['mousedown'], dragStart);
         container.querySelectorAll('.resizer').forEach(resizer => { resizer.addEventListener('mousedown', resizeStart); });
         
-        fetchAnnouncement();
-        showNotification('chatium loaded.');
+        // --- Initialization Calls ---
+        updatePanelUI(); // Initialize the locked/panel content
+        startAnnouncementPolling(); // Start the Lanyard polling
     }
 
     // --- Global Keybind Listener ---
